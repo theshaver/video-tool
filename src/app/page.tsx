@@ -308,7 +308,7 @@ export default function Home() {
               {/* Show live camera or playback stream */}
               <video
                 ref={videoRef}
-                className={styles.videoElement}
+                className={`${styles.videoElement} ${step === "recording" ? styles.mirrored : ""}`}
                 autoPlay
                 playsInline
                 muted={step === "recording"}
