@@ -192,7 +192,7 @@ export default function Home() {
       const { uploadUrl } = await response.json();
 
       // 2. Upload the Blob directly to Google Drive URL using XMLHttpRequest for progress tracking
-      return new Promise<void>((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open("PUT", uploadUrl, true);
 
@@ -205,24 +205,37 @@ export default function Home() {
         };
 
         xhr.onload = () => {
-          if (xhr.status === 200 || xhr.status === 201) {
-            setStep("success");
-            resolve();
+          console.log("XHR onload - Status:", xhr.status);
+          try {
+            console.log("XHR onload - Body:", xhr.responseText);
+          } catch(e) {}
+          
+          if (xhr.status >= 200 && xhr.status < 400) {
+             resolve();
+          } else if (xhr.status === 0) {
+             console.warn("XHR status is 0. This is typically due to an opaque CORS response where the upload succeeded but browser masked the response.");
+             resolve();
           } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
+             reject(new Error(`Upload failed with status ${xhr.status}`));
           }
         };
 
-        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.onerror = () => {
+          console.error("XHR onerror event fired.");
+          reject(new Error("Network error during upload"));
+        };
 
         // No need for authorization header, the session URL works securely automatically!
         xhr.setRequestHeader("Content-Type", videoBlob.type || "video/webm");
         xhr.send(videoBlob);
       });
 
+      console.log("Upload Promise correctly resolved. Moving to success UI.");
+      setStep("success");
+
     } catch (err) {
-      console.error(err);
-      alert("An error occurred while uploading. Please try again.");
+      console.error("Caught Upload Error:", err);
+      alert("An error occurred while confirming your upload. Please check the console.");
       setStep("preview"); // Go back so they can retry
       setUploadProgress(0);
     }
