@@ -9,8 +9,7 @@ export default function Home() {
   const [step, setStep] = useState<Step>("onboarding");
 
   // Registration data
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [name, setName] = useState("");
 
   // Video references and states
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -150,8 +149,8 @@ export default function Home() {
   };
 
   const handleNext = () => {
-    if (!firstName.trim() || !lastName.trim()) {
-      alert("Please enter both your first and last name.");
+    if (!name.trim()) {
+      alert("Please enter your name.");
       return;
     }
     setStep("recording");
@@ -175,8 +174,7 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          firstName,
-          lastName,
+          name,
           mimeType: videoBlob.type || "video/webm",
           size: videoBlob.size,
         }),
@@ -262,27 +260,15 @@ export default function Home() {
               </ul>
             </div>
 
-            <div className={styles.formGrid}>
-              <div className="input-group">
-                <label className="input-label">First Name</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  placeholder="Jane"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                />
-              </div>
-              <div className="input-group">
-                <label className="input-label">Last Name</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  placeholder="Doe"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                />
-              </div>
+            <div className="input-group">
+              <label className="input-label">Full Name</label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="Jane Doe"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </div>
 
             <button className="btn btn-primary" onClick={handleNext}>

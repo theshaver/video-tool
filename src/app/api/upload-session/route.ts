@@ -4,10 +4,10 @@ import { google } from 'googleapis';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { firstName, lastName, mimeType, size } = body;
+    const { name, mimeType, size } = body;
     
     // Safety check on user input
-    if (!firstName || !lastName || !mimeType || typeof size !== 'number') {
+    if (!name || !mimeType || typeof size !== 'number') {
       return NextResponse.json({ error: "Invalid request payload" }, { status: 400 });
     }
     
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
 
     // Generate a safe file name using the user's submitted name
     const dateStr = new Date().toISOString().split('T')[0];
-    const rawName = `${firstName}_${lastName}_Video_${dateStr}.${extension}`;
+    const rawName = `${name}_Video_${dateStr}.${extension}`;
     // Clean to prevent funny characters
     const filename = rawName.replace(/[^a-zA-Z0-9_\-\.]/g, '_');
 
