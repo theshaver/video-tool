@@ -3,7 +3,20 @@
 import { useState, useRef, useEffect } from "react";
 import styles from "./page.module.css";
 
-type Step = "onboarding" | "recording" | "preview" | "uploading" | "success";
+type Step = "onboarding" | "recording" | "processing" | "preview" | "uploading" | "success";
+
+const PROCESSING_SUBTITLES = [
+  "Let's roll that back.",
+  "Be Kind. Rewind.",
+  "The camera says you did great.",
+  "Dunking in development solution...",
+  "That take was perfect. Probably.",
+  "Pretending that was the first take...",
+  "Not actually doing anything...",
+];
+
+const randomSubtitle = () =>
+  PROCESSING_SUBTITLES[Math.floor(Math.random() * PROCESSING_SUBTITLES.length)];
 
 export default function Home() {
   const [step, setStep] = useState<Step>("onboarding");
@@ -21,7 +34,13 @@ export default function Home() {
   // Recording state
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0); // in seconds
-  const MAX_TIME = 300; // 5 minutes
+  const MAX_TIME = 180; // 3 minutes
+
+  // Mobile orientation
+  const [isPortrait, setIsPortrait] = useState(false);
+
+  // Processing subtitle (stable across renders)
+  const processingSubtitle = useRef(randomSubtitle());
 
   // Upload state
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -37,7 +56,29 @@ export default function Home() {
   }, [step]);
 
   useEffect(() => {
-    // Stop recording automatically if we hit 5 minutes
+    // Detect portrait vs landscape on mobile
+    const checkOrientation = () => {
+      const isMobile = window.innerWidth <= 900;
+      setIsPortrait(isMobile && window.innerHeight > window.innerWidth);
+    };
+    checkOrientation();
+    window.addEventListener("resize", checkOrientation);
+    window.addEventListener("orientationchange", checkOrientation);
+    return () => {
+      window.removeEventListener("resize", checkOrientation);
+      window.removeEventListener("orientationchange", checkOrientation);
+    };
+  }, []);
+
+  // Refresh processing subtitle each time we enter the processing step
+  useEffect(() => {
+    if (step === "processing") {
+      processingSubtitle.current = randomSubtitle();
+    }
+  }, [step]);
+
+  useEffect(() => {
+    // Stop recording automatically if we hit 3 minutes
     if (isRecording && recordingTime >= MAX_TIME) {
       stopRecording();
     }
@@ -56,7 +97,7 @@ export default function Home() {
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { 
+        video: {
           facingMode: "user",
           width: { ideal: 1920 },
           height: { ideal: 1080 }
@@ -114,7 +155,7 @@ export default function Home() {
     recorder.onstop = () => {
       const blob = new Blob(localChunks, { type: finalMimeType });
       setVideoBlob(blob);
-      setStep("preview");
+      setStep("processing");
 
       // Stop the camera stream now that we have the video recorded
       if (mediaStream) {
@@ -126,6 +167,11 @@ export default function Home() {
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
+
+      // Briefly display a loading spinner before advancing to preview
+      setTimeout(() => {
+        setStep("preview");
+      }, 1500);
     };
 
     recorder.start(200); // collect 200ms chunks
@@ -210,25 +256,25 @@ export default function Home() {
           console.log("XHR onload - Status:", xhr.status);
           try {
             console.log("XHR onload - Body:", xhr.responseText);
-          } catch(e) {}
-          
+          } catch (e) { }
+
           if (xhr.status >= 200 && xhr.status < 400) {
-             resolve();
+            resolve();
           } else if (xhr.status === 0) {
-             console.warn("XHR status is 0. This is typically due to an opaque CORS response where the upload succeeded but browser masked the response.");
-             resolve();
+            console.warn("XHR status is 0. This is typically due to an opaque CORS response where the upload succeeded but browser masked the response.");
+            resolve();
           } else {
-             reject(new Error(`Upload failed with status ${xhr.status}`));
+            reject(new Error(`Upload failed with status ${xhr.status}`));
           }
         };
 
         xhr.onerror = () => {
           console.error("XHR onerror event fired. Local Progress:", localProgress);
           if (localProgress >= 99) {
-             console.warn("Upload successfully transmitted but Google threw a severe CORS header violation. Forcing success resolution.");
-             resolve();
+            console.warn("Upload successfully transmitted but Google threw a severe CORS header violation. Forcing success resolution.");
+            resolve();
           } else {
-             reject(new Error("Network error during upload"));
+            reject(new Error("Network error during upload"));
           }
         };
 
@@ -248,22 +294,48 @@ export default function Home() {
     }
   };
 
+  const tips = (
+    <div className={styles.tips}>
+      <strong>Tips:</strong>
+      <ul>
+        <li>Make sure you&apos;re well-lit.</li>
+        <li>Find a quiet spot. No fans or wind.</li>
+        <li>Your eyes should sit roughly in the top third of the frame.</li>
+        <li>Speak a little slower than feels natural.</li>
+      </ul>
+    </div>
+  );
+
   return (
     <main className={styles.container}>
-      <div className={`${styles.card} glass-panel`}>
+
+      {/* Portrait-mode overlay */}
+      {isPortrait && step !== "onboarding" && (
+        <div className={styles.portraitOverlay}>
+          <div className={styles.portraitBox}>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={styles.rotateIcon}>
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+              <path d="M12 18h.01"></path>
+            </svg>
+            <p>Please rotate your device to <strong>landscape mode</strong> for the best experience.</p>
+          </div>
+        </div>
+      )}
+
+      <div className={`${styles.card} ${(step === "recording" || step === "preview") ? styles.cardWide : ""} glass-panel`}>
 
         {step === "onboarding" && (
           <>
             <h1>Welcome!</h1>
-            <p className="subtitle">Let's get your video recorded.</p>
+            <p className="subtitle">Let&apos;s get your video recorded.</p>
 
             <div className={styles.instructions}>
               <strong>Please note:</strong>
               <ul>
-                <li style={{ marginBottom: "1rem" }}>Keep your video <strong>under 2 minutes</strong>.</li>
+                <li style={{ marginBottom: "1rem" }}>Keep it brief. Even one word or one sentence is fine.</li>
                 <li style={{ marginBottom: "1.5rem" }}>
                   <div style={{ marginBottom: "0.5rem" }}>
-                    Please use a <strong>laptop</strong> OR place your phone in <strong>landscape mode</strong>.
+                    Please use a <strong>computer</strong> OR place your phone in <strong>landscape mode</strong>.
                   </div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "1.5rem", marginTop: "1rem" }}>
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -280,16 +352,16 @@ export default function Home() {
                     </svg>
                   </div>
                 </li>
-                <li>When you click Next, your browser will ask for <strong>Camera and Mic access</strong>. Please select "Allow".</li>
+                <li>When you click Next, your browser will ask for <strong>Camera and Mic access</strong>. Please select &quot;Allow&quot;.</li>
               </ul>
             </div>
 
             <div className="input-group">
-              <label className="input-label">Full Name</label>
+              <label className="input-label">Your Name</label>
               <input
                 type="text"
                 className="input-field"
-                placeholder="Jane Doe"
+                placeholder=""
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -304,50 +376,65 @@ export default function Home() {
         {(step === "recording" || step === "preview") && (
           <>
             <h2>{step === "recording" ? "Record your video" : "Review your video"}</h2>
-            <div className={styles.videoContainer}>
-              {/* Show live camera or playback stream */}
-              <video
-                ref={videoRef}
-                className={`${styles.videoElement} ${step === "recording" ? styles.mirrored : ""}`}
-                autoPlay
-                playsInline
-                muted={step === "recording"}
-                src={videoBlob ? URL.createObjectURL(videoBlob) : undefined}
-                controls={step === "preview"}
-              />
 
-              {isRecording && (
-                <div className={`${styles.timer} recording-pulse`}>
-                  <span style={{ color: "var(--red)", marginRight: "8px" }}>●</span>
-                  {formatTime(recordingTime)} / 05:00
-                </div>
-              )}
-            </div>
+            {/* Unified layout: column on desktop, row on landscape mobile */}
+            <div className={styles.recordingLayout}>
+              <div className={styles.videoContainer}>
+                <video
+                  ref={videoRef}
+                  className={`${styles.videoElement} ${step === "recording" ? styles.mirrored : ""}`}
+                  autoPlay
+                  playsInline
+                  muted={step === "recording"}
+                  src={videoBlob ? URL.createObjectURL(videoBlob) : undefined}
+                  controls={step === "preview"}
+                />
+                {isRecording && (
+                  <div className={`${styles.timer} recording-pulse`}>
+                    <span style={{ color: "var(--red)", marginRight: "8px" }}>●</span>
+                    {formatTime(recordingTime)} / 03:00
+                  </div>
+                )}
+              </div>
 
-            <div className={styles.controls}>
-              {step === "recording" && !isRecording && (
-                <button className="btn btn-danger" onClick={startRecording}>
-                  Start Recording
-                </button>
-              )}
-              {step === "recording" && isRecording && (
-                <button className="btn btn-primary" onClick={stopRecording}>
-                  Stop Recording
-                </button>
-              )}
-
-              {step === "preview" && (
-                <>
-                  <button className="btn btn-secondary" onClick={retakeVideo}>
-                    Retake Video
+              {/* Sidebar — always rendered; content switches by state */}
+              <div className={styles.recordingSidebar}>
+                {step === "recording" && !isRecording && (
+                  <>
+                    <button className="btn btn-danger" onClick={startRecording}>
+                      Start Recording
+                    </button>
+                    {tips}
+                  </>
+                )}
+                {step === "recording" && isRecording && (
+                  <button className="btn btn-primary" onClick={stopRecording}>
+                    Stop Recording
                   </button>
-                  <button className="btn btn-primary" onClick={handleSubmit}>
-                    Submit Video
-                  </button>
-                </>
-              )}
+                )}
+                {step === "preview" && (
+                  <div className={styles.previewControls}>
+                    <button className="btn btn-secondary" onClick={retakeVideo}>
+                      Retake Video
+                    </button>
+                    <button className="btn btn-primary" onClick={handleSubmit}>
+                      Submit Video
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </>
+        )}
+
+
+
+
+        {step === "processing" && (
+          <div className={styles.processingState}>
+            <div className={styles.spinner}></div>
+            <p className="subtitle">{processingSubtitle.current}</p>
+          </div>
         )}
 
         {step === "uploading" && (

@@ -14,9 +14,20 @@
   animation: fadeIn 0.5s ease-out;
 }
 
+.cardWide {
+  max-width: 860px;
+}
+
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .instructions {
@@ -54,13 +65,45 @@
   border-radius: 16px;
   overflow: hidden;
   margin-bottom: 2rem;
-  box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
 }
 
 .videoElement {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.mirrored {
+  transform: scaleX(-1);
+}
+
+.processingState {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 4rem 2rem;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--surface-color);
+  border-top: 4px solid var(--blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .controls {
@@ -74,7 +117,7 @@
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 999px;
@@ -108,4 +151,156 @@
   margin-top: 1rem;
   color: var(--text-secondary);
   font-weight: 500;
+}
+
+/* ─── Portrait overlay ─────────────────────────────────────────── */
+.portraitOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 43, 54, 0.88);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.portraitBox {
+  background: var(--glass-bg);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  max-width: 320px;
+  color: var(--text-main);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.portraitBox p {
+  font-size: 1.1rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.rotateIcon {
+  color: var(--blue);
+  animation: rotateHint 2s ease-in-out infinite;
+}
+
+@keyframes rotateHint {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(-90deg);
+  }
+
+  75% {
+    transform: rotate(-90deg);
+  }
+
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* ─── Recording side-by-side layout ────────────────────────────── */
+
+/* Default (desktop): controls live below the video */
+.recordingLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Landscape mobile: flip to side-by-side */
+@media (max-width: 900px) and (orientation: landscape) {
+  .recordingLayout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .recordingLayout .videoContainer {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-bottom: 0;
+  }
+}
+
+/* Desktop sidebar: button centred above tips */
+.recordingSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+}
+
+/* Landscape mobile sidebar: fixed-width column on the right */
+@media (max-width: 900px) and (orientation: landscape) {
+  .recordingSidebar {
+    flex: 0 0 160px;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 1rem;
+  }
+}
+
+/* ─── Preview controls ──────────────────────────────────────────── */
+
+/* Desktop: side-by-side */
+.previewControls {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Landscape mobile: stacked column */
+@media (max-width: 900px) and (orientation: landscape) {
+  .previewControls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ─── Tips block ────────────────────────────────────────────────── */
+.tips {
+  background: var(--surface-color);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  text-align: left;
+  border-left: 3px solid var(--cyan);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.tips strong {
+  display: block;
+  color: var(--text-main);
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+}
+
+.tips ul {
+  padding-left: 1.1rem;
+  margin: 0;
+}
+
+.tips li {
+  margin-bottom: 0.35rem;
+}
+
+.tips li:last-child {
+  margin-bottom: 0;
 }
