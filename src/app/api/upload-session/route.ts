@@ -82,7 +82,7 @@ export async function POST(req: Request) {
     // Send the URL back to the client so it can do a direct PUT request to Google Drive
     return NextResponse.json({ uploadUrl });
     
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error creating upload session:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

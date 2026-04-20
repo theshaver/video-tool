@@ -315,7 +315,7 @@ export default function Home() {
           <div className={styles.portraitBox}>
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={styles.rotateIcon}>
               <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-              <path d="M12 18h.01"></path>
+              <path d="M12 6h.01"></path>
             </svg>
             <p>Please rotate your device to <strong>landscape mode</strong> for the best experience.</p>
           </div>
@@ -364,6 +364,7 @@ export default function Home() {
                 placeholder=""
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleNext()}
               />
             </div>
 
