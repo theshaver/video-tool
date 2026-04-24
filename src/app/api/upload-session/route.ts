@@ -5,24 +5,24 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { name, mimeType, size } = body;
-    
+
     // Safety check on user input
     if (!name || !mimeType || typeof size !== 'number') {
       return NextResponse.json({ error: "Invalid request payload" }, { status: 400 });
     }
-    
+
     const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
     // Replace literal "\n" sequence out of standard strings to actual newlines for the PEM format
-    const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'); 
+    const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
     const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
 
     if (!clientEmail || !privateKey || !folderId) {
-       console.error("Missing Google Credentials in ENV", {
-         hasEmail: !!clientEmail,
-         hasKey: !!privateKey,
-         hasFolder: !!folderId
-       });
-       return NextResponse.json({ error: "Server Configuration Error" }, { status: 500 });
+      console.error("Missing Google Credentials in ENV", {
+        hasEmail: !!clientEmail,
+        hasKey: !!privateKey,
+        hasFolder: !!folderId
+      });
+      return NextResponse.json({ error: "Server Configuration Error" }, { status: 500 });
     }
 
     const auth = new google.auth.GoogleAuth({
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
         private_key: privateKey,
       },
       // Using 'drive.file' scope for security - limits access to only files the service app creates!
-      scopes: ['https://www.googleapis.com/auth/drive.file'], 
+      scopes: ['https://www.googleapis.com/auth/drive.file'],
     });
 
     // Determine the exact extension based on the actual mimeType
@@ -47,42 +47,42 @@ export async function POST(req: Request) {
 
     // To get the raw resumable upload URL, we fetch the Google Drive REST API directly with our auth token.
     const token = await auth.getAccessToken();
-    
+
     if (!token) {
-        return NextResponse.json({ error: "Could not retrieve access token" }, { status: 500 });
+      return NextResponse.json({ error: "Could not retrieve access token" }, { status: 500 });
     }
 
     const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true`, {
-       method: 'POST',
-       headers: {
-         'Authorization': `Bearer ${token}`,
-         'Content-Type': 'application/json',
-         'X-Upload-Content-Type': mimeType,
-         'X-Upload-Content-Length': size.toString()
-       },
-       body: JSON.stringify({
-         name: filename,
-         parents: [folderId]
-       })
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'X-Upload-Content-Type': mimeType,
+        'X-Upload-Content-Length': size.toString()
+      },
+      body: JSON.stringify({
+        name: filename,
+        parents: [folderId]
+      })
     });
 
     if (!res.ok) {
-       const text = await res.text();
-       console.error("Google Drive API Error:", text, "Status:", res.status);
-       return NextResponse.json({ error: "Failed to initialize upload in Google Drive" }, { status: res.status });
+      const text = await res.text();
+      console.error("Google Drive API Error:", text, "Status:", res.status);
+      return NextResponse.json({ error: "Failed to initialize upload in Google Drive" }, { status: res.status });
     }
 
     // The unique session upload URL is returned in the 'Location' header
     const uploadUrl = res.headers.get('location');
 
     if (!uploadUrl) {
-       return NextResponse.json({ error: "Google Drive did not return an upload URL" }, { status: 500 });
+      return NextResponse.json({ error: "Google Drive did not return an upload URL" }, { status: 500 });
     }
 
     // Send the URL back to the client so it can do a direct PUT request to Google Drive
     return NextResponse.json({ uploadUrl });
-    
-  } catch (error) {
+
+  } catch (error: any) {
     console.error("Error creating upload session:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

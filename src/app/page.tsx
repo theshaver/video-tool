@@ -34,7 +34,7 @@ export default function Home() {
   // Recording state
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0); // in seconds
-  const MAX_TIME = 180; // 3 minutes
+  const MAX_TIME = 300; // 5 minutes
 
   // Mobile orientation
   const [isPortrait, setIsPortrait] = useState(false);
@@ -78,7 +78,7 @@ export default function Home() {
   }, [step]);
 
   useEffect(() => {
-    // Stop recording automatically if we hit 3 minutes
+    // Stop recording automatically if we hit 5 minutes
     if (isRecording && recordingTime >= MAX_TIME) {
       stopRecording();
     }
@@ -332,7 +332,7 @@ export default function Home() {
             <div className={styles.instructions}>
               <strong>Please note:</strong>
               <ul>
-                <li style={{ marginBottom: "1rem" }}>Keep it brief. Even one word or one sentence is fine.</li>
+                <li style={{ marginBottom: "1rem" }}>Keep it brief.</li>
                 <li style={{ marginBottom: "1.5rem" }}>
                   <div style={{ marginBottom: "0.5rem" }}>
                     Please use a <strong>computer</strong> OR place your phone in <strong>landscape mode</strong>.
@@ -393,7 +393,7 @@ export default function Home() {
                 {isRecording && (
                   <div className={`${styles.timer} recording-pulse`}>
                     <span style={{ color: "var(--red)", marginRight: "8px" }}>●</span>
-                    {formatTime(recordingTime)} / 03:00
+                    {formatTime(recordingTime)} / 05:00
                   </div>
                 )}
               </div>
